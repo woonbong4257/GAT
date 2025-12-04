@@ -35,9 +35,8 @@ x = torch.randn((num_nodes, num_features))
 # PyG 데이터 객체 생성
 data = Data(x=x, edge_index=edge_index)
 
-# ---------------------------------------------------------
 # 2. GAT 모델 정의
-# ---------------------------------------------------------
+
 class SimpleGAT(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(SimpleGAT, self).__init__()
@@ -54,9 +53,8 @@ class SimpleGAT(torch.nn.Module):
 # 모델 초기화
 model = SimpleGAT(in_channels=num_features, out_channels=4)
 
-# ---------------------------------------------------------
 # 3. 모델 실행 및 중요도 확인
-# ---------------------------------------------------------
+
 model.eval()
 with torch.no_grad():
     out, edges_out, attention_weights = model(data.x, data.edge_index)
@@ -71,9 +69,8 @@ for i in range(edges_out.shape[1]):
     # 노드 6(Index 5)으로 들어오는 정보가 중요하므로 이를 눈여겨봄
     print(f"Node {reverse_mapping[src]} -> Node {reverse_mapping[dst]} : Importance {weight:.4f}")
 
-# ---------------------------------------------------------
 # 4. 결과 시각화
-# ---------------------------------------------------------
+
 def visualize_graph(edge_index, attention_weights, title="GAT Attention Weights"):
     G = nx.DiGraph()
     

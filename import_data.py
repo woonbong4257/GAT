@@ -17,7 +17,7 @@ from torch_geometric.data import Data
 
 # 1. 데이터 생성 (튜토리얼 학습용 데이터)
 # 7개의 작업(Node)에 대한 4가지 속성(Features) 정의
-# 속성: [소요시간(분), CPU코어수, 데이터크기(GB), 긴급도(1~5)]
+# 속성: [소요시간(분), CPU코어수, 데이터크기(GB), 중요도(1~5)]
 data_source = {
     'task_name': ['Data Load', 'Pre-process', 'Feature Eng', 'Model Train', 'Data Validation', 'Model Eval', 'Deployment'],
     'duration_min': [10, 30, 45, 120, 15, 20, 5],
@@ -40,34 +40,30 @@ x = torch.tensor(df[feature_cols].values, dtype=torch.float)
 num_nodes = x.shape[0]      # 7
 num_features = x.shape[1]   # 4
 
-# =========================================================
+
 # 2. 그래프 구조 정의 (DAG 모델링)
-# =========================================================
 # 노드 번호 매핑 (User: 1~7 -> Code: 0~6)
 mapping = {1:0, 2:1, 3:2, 4:3, 5:4, 6:5, 7:6}
 reverse_mapping = {v:k for k,v in mapping.items()} # 0->1 변환용
 
-# 엣지 연결 (Source -> Target)
 edge_index = torch.tensor([
     [mapping[1], mapping[2]], 
     [mapping[2], mapping[3]], 
     [mapping[3], mapping[4]], 
     [mapping[1], mapping[5]], 
     [mapping[5], mapping[6]], 
-    [mapping[4], mapping[6]], # 중요: 병합 지점 (4->6)
+    [mapping[4], mapping[6]], 
     [mapping[6], mapping[7]]
 ], dtype=torch.long).t().contiguous()
 
 # PyG 데이터 객체 생성
 data = Data(x=x, edge_index=edge_index)
 
-# =========================================================
 # 3. GAT 모델 정의
-# =========================================================
+
 class SimpleGAT(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(SimpleGAT, self).__init__()
-        # heads=1: 어텐션을 하나만 사용 (해석 용이성)
         self.conv1 = GATConv(in_channels, out_channels, heads=1, concat=False)
 
     def forward(self, x, edge_index):
@@ -75,12 +71,12 @@ class SimpleGAT(torch.nn.Module):
         out, (edge_index_out, alpha) = self.conv1(x, edge_index, return_attention_weights=True)
         return out, edge_index_out, alpha
 
-# 모델 생성 (입력 차원: 4, 출력 차원: 8 임의 설정)
+# 모델 생성
 model = SimpleGAT(in_channels=num_features, out_channels=4)
 
-# =========================================================
+
 # 4. 실행 및 결과 출력
-# =========================================================
+
 model.eval()
 with torch.no_grad():
     out, edges_out, attention_weights = model(data.x, data.edge_index)
